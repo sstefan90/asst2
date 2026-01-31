@@ -34,6 +34,7 @@ asst1/
 Medium effort requires you to copy the code of specific functions that you implemented into the appropriate files.
 - `src/cs248a_renderer/slang_shaders/texture/texture.slang`: Copy the `TODO` functions that you'd implemented for `SharedTexture3DBuffer`.
 - `src/cs248a_renderer/slang_shaders/primitive/triangle.slang`: Copy the `hit` function that you'd implemented.
+- `src/cs248a_renderer/slang_shaders/renderer.slang`: Copy the `render` function you'd implemented.
   
 ### High Effort
 High effort requires you to _slightly_ modify a function that you'd implemented last time.  
