@@ -17,7 +17,7 @@ public struct SharedTexture2DBuffer<T>
     {
         T outV = T(0.0);
         // TODO: Student implementation starts here.
-
+        
         // TODO: Student implementation ends here.
         return outV;
     }
@@ -71,9 +71,19 @@ public struct SharedTexture3DBuffer<T>
     public T pointSample(SharedTexture3D tex, float3 uvw)
     {
         // TODO: Student implementation starts here.
-        return T(0);
+        uint3 voxelCoord = round(uvw * tex.size);
+
+        return getBufferValue(tex, voxelCoord);
 
         // TODO: Student implementation ends here.
+    }
+
+    public T bilinearSample(T v00, T v10, T v01, T v11, float2 frac) {
+        T v0 = v00 * T(1.0 - frac.x) + v10 * T(frac.x);//lerp(v00, v10, frac.x);
+        T v1 = v01 * T(1.0 - frac.x) +  v11 * T(frac.x);
+
+        return v0 * T(1 - frac.y) + v1 * T(frac.y);
+
     }
 
     /**
@@ -85,7 +95,28 @@ public struct SharedTexture3DBuffer<T>
     public T trilinearSample(SharedTexture3D tex, float3 uvw)
     {
         // TODO: Student implementation starts here.
-        return T(0);
+        float3 coord_float = uvw * float3(tex.size);
+        uint3 voxelCoord = uint3(floor(coord_float)); //
+        float3 frac =  coord_float - float3(voxelCoord);
+        T result;
+
+        T v000 = getBufferValue(tex, voxelCoord + int3(0, 0, 0));
+        T v100 = getBufferValue(tex, voxelCoord + int3(1, 0, 0));
+        T v010 = getBufferValue(tex, voxelCoord + int3(0, 1, 0));
+        T v110 = getBufferValue(tex, voxelCoord + int3(1, 1, 0));
+        T v001 = getBufferValue(tex, voxelCoord + int3(0, 0, 1));
+        T v101 = getBufferValue(tex, voxelCoord + int3(1, 0, 1));
+        T v011 = getBufferValue(tex, voxelCoord + int3(0, 1, 1));
+        T v111 = getBufferValue(tex, voxelCoord + int3(1, 1, 1));
+
+        T bot = bilinearSample(v000, v100, v010, v110, frac.xy);
+        T top = bilinearSample(v001, v101, v011, v111, frac.xy);
+
+        
+
+
+        
+        return bot * T(1 - frac.z) + top * T(frac.z);
 
         // TODO: Student implementation ends here.
     }

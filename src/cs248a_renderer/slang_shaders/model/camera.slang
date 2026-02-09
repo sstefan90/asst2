@@ -18,11 +18,11 @@ public struct Camera
      */
     public Ray generateRay(float2 uv)
     {
-        // TODO: Student implementation starts here.
-        Ray ray = Ray(float3(0.0), float3(0.0)); // Placeholder
 
-        // TODO: Student implementation ends here.
+        Ray start = Ray(float3(0.0, 0.0, 0.0), float3(normalize(float3(uv*canvasSize - canvasSize*0.5, -focalLength))));
 
-        return ray;
+        return start.transform(invViewMatrix);
+
+        //return Ray(float3(0.0), float3(0.0));
     }
 }

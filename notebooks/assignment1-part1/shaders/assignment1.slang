@@ -23,13 +23,10 @@ public float4 fillRed(uint2 tid)
  */
 public float4 fillGradient(uint2 tid, uint2 canvasSize)
 {
-    // TODO: Student implementation starts here.
+    float2 result = float2(tid) / float2(canvasSize);
 
-    float2 uv = float2(0.0);
 
-    // TODO: Student implementation ends here.
-    
-    return float4(1.0, 0.0, 1.0, 1.0);
+    return float4(result, 0, 1.0);
 }
 
 /**
@@ -41,13 +38,44 @@ public float4 fillGradient(uint2 tid, uint2 canvasSize)
  */
 public float4 fillCheckerboard(uint2 tid, uint2 canvasSize, uint numSquares)
 {
-    // TODO: Student implementation starts here.
+    float2 norm = float2(tid) / float2(canvasSize);
+    uint2 square_sizes = canvasSize / numSquares;
 
-    return float4(1.0, 0.0, 1.0, 1.0);
+    uint2 square_index = tid  / square_sizes;
+
+    if ((square_index.x + square_index.y) % 2 == 0)
+    {
+        return float4(1.0, 1.0, 1.0, 1.0);
+    }
+    else
+    {
+        return float4(0.0, 0.0, 0.0, 1.0);
+    }
 
     // TODO: Student implementation ends here.
 }
 
+
+
+public uint side_test(float2 p, float2 a, float2 b, float2 c)
+{
+
+    float2x2 m = float2x2(
+        0.0, -1.0,
+        1.0, 0.0
+    );
+
+    float2 cross1 = dot(mul(m, c - b), p - b);
+    float2 cross2 = dot(mul(m, c - b), a - b);
+
+    return uint((dot(cross1, cross2) >= 0));
+
+}
+
+public uint inTriangleTest(float2 p, float2 a, float2 b, float2 c)
+{
+    return uint(side_test(p, a, b, c) & side_test(p, b, a, c) & side_test(p, c, a, b));
+}
 /**
  * Rasterize a single triangle.
  * @param tid The 2D coordinate of the current thread. Ranges from (0, 0) to (canvasSize.x - 1, canvasSize.y - 1).
@@ -59,9 +87,13 @@ public float4 fillCheckerboard(uint2 tid, uint2 canvasSize, uint numSquares)
  */
 public float4 triangleRasterizer(uint2 tid, uint2 canvasSize, float2 v0, float2 v1, float2 v2)
 {
-    // TODO: Student implementation starts here.
+    float2 tid = float2(tid) / float2(canvasSize);
 
-    return float4(1.0, 0.0, 1.0, 1.0);
+    float3 result = float3(1.0, 1.0, 1.0);
+
+    result = inTriangleTest(tid, v0, v1, v2) * result;
+
+    return float4(result, 1.0);
 
     // TODO: Student implementation ends here.
 }
@@ -107,7 +139,28 @@ public float4 rayTrianglesTest(uint2 tid, uint2 canvasSize, StructuredBuffer<Tri
     float2 uv = float2(tid) / float2(canvasSize);
     Ray ray = Ray(float3(uv, 0.0), float3(0.0, 0.0, -1.0), float2(0.0, float.maxValue));
 
-    // TODO: Student implementation starts here.
-    return float4(1.0, 0.0, 1.0, 1.0);
+    // find the normal of the plane defined by the triangle
+    Triangle closest;
+    float t_smallest = float.maxValue;
+    for (int i = 0; i < triangleCount; i++)
+    {
+        Optional<RayHitResult> hitResult = triangles[i].hit(ray);
+        if (hitResult.hasValue) {
+            if (hitResult.value.t < t_smallest)
+            {
+                t_smallest = hitResult.value.t;
+                closest = triangles[i];
+
+            }
+        }
+    }
+
+    if (t_smallest == float.maxValue)
+    {
+        return float4(0.0, 0.0, 0.0, 1.0);
+    }
+
+    return float4(closest.averageColor(), 1.0);
+
     // TODO: Student implementation starts here.
 }
