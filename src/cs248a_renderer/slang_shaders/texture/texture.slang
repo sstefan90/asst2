@@ -15,29 +15,53 @@ public struct SharedTexture2DBuffer<T>
 
     public T pointSample(SharedTexture2D tex, float2 uv)
     {
-        T outV = T(0.0);
-        // TODO: Student implementation starts here.
-        
-        // TODO: Student implementation ends here.
+
+        uint2 texelCoord = uint2(round(uv * float2(tex.size[0]-1, tex.size[1]-1)));
+        T outV = getBufferValue(tex, texelCoord);
         return outV;
     }
 
     public T bilinearSample(SharedTexture2D tex, float2 uv)
     {
-        T outV = T(0.0);
+        //T outV = T(0.0);
         // TODO: Student implementation starts here.
+        float2 coord_float = uv * float2(tex.size) -0.5;
+        int2 voxelCoord = int2(floor(coord_float)); //
+        float2 frac =  coord_float - float2(voxelCoord);
 
         // TODO: Student implementation ends here.
+
+        uint x0 = uint(clamp(voxelCoord.x + 0, 0, int(tex.size[0]-1)));
+        uint y0 = uint(clamp(voxelCoord.y + 0, 0, int(tex.size[1]-1)));
+
+        uint x1 = uint(clamp(voxelCoord.x + 1, 0, int(tex.size[0]-1)));
+        uint y1 = uint(clamp(voxelCoord.y + 1, 0, int(tex.size[1]-1)));
+
+        
+        
+        T v00 = getBufferValue(tex, uint2(x0, y0));
+        T v10 = getBufferValue(tex, uint2(x1, y0));
+        T v01 = getBufferValue(tex, uint2(x0, y1));
+        T v11 = getBufferValue(tex, uint2(x1, y1));
+
+        T v0 = v00 * T(1.0 - frac.x) + v10 * T(frac.x);
+        T v1 = v01 * T(1.0 - frac.x) +  v11 * T(frac.x);
+
+        T outV = v0 * T(1.0 - frac.y) + v1 * T(frac.y);
         return outV;
     }
 
     public T trilinearSample(SharedTexture2D[] mipmapLevels, float2 uv, float d, uint totalLevels)
     {
-        T outV = T(0.0);
-        // TODO: Student implementation starts here.
+        d = clamp(d, 0.0, float(totalLevels - 1));
+        uint level_low = uint(floor(d));
+        uint level_high = uint(ceil(d));
+        float frac = d - float(level_low);
 
-        // TODO: Student implementation ends here.
-        return outV;
+        T low = bilinearSample(mipmapLevels[level_low], uv);
+        T high = bilinearSample(mipmapLevels[level_high], uv);
+
+        return low * T(1.0 - frac) + high * T(frac);
     }
 }
 
@@ -71,7 +95,7 @@ public struct SharedTexture3DBuffer<T>
     public T pointSample(SharedTexture3D tex, float3 uvw)
     {
         // TODO: Student implementation starts here.
-        uint3 voxelCoord = round(uvw * tex.size);
+        uint3 voxelCoord = uint3(round(uvw * tex.size));
 
         return getBufferValue(tex, voxelCoord);
 

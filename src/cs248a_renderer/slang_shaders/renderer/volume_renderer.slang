@@ -19,9 +19,51 @@ public static float DENSITY_SCALE = 5.0;
  */
 public float4 volumeSample(float2 uv, RendererUniform uniforms, float tMax, float4 primColor)
 {
-    // TODO: Student implementation starts here.
+    
+    
+    Ray ray = uniforms.camera.generateRay(uv);
+    ray.origin = mul(uniforms.volume.invModelMatrix, float4(ray.origin, 1.0)).xyz;
+    ray.direction = mul(uniforms.volume.invModelMatrix, float4(ray.direction, 0.0)).xyz;
+    float dirscale = length(ray.direction);
+    ray.direction = normalize(ray.direction);
+    BoundingBox volumeBound = uniforms.volume.bound;
+    float2 t_data = volumeBound.hit(ray);
+    float t_enter = t_data[0];
+    float t_exit = t_data[1];
+    tMax = tMax * dirscale;
 
-    return primColor;
+
+    if (t_enter < 0 || t_exit < 0) {
+        return primColor;
+    }
+
+    if (tMax < t_enter) {
+        //primitive in front of volume
+        return primColor;
+    }
+
+    float t_end = min(t_exit, tMax);
+
+    if (t_end < t_enter) {
+        return primColor;
+    }
+
+    float stepSize = STEP_SIZE;
+
+    uint neededSteps = uint(ceil((t_end - t_enter) / STEP_SIZE));
+
+    if (neededSteps > MAX_STEPS) {
+        //increase step size so we can make it across
+        stepSize = (t_end - t_enter) / float(MAX_STEPS);
+    }
+
+    uint numSteps = min(MAX_STEPS, uint(ceil((t_end - t_enter) / STEP_SIZE)));
+
+    //if (stepSize > STEP_SIZE){
+    //    return float4(1.0, 0.0, 0.0, 1.0); //red
+    //}
+    
+    return accumulateColor<4>(ray, volumeBound, numSteps, stepSize, DENSITY_SCALE, primColor, uniforms.volume.tex);
     
     // TODO: Student implementation ends here.
 }
@@ -61,9 +103,35 @@ public float4 accumulateColor<let N : uint>(
     no_diff float4 backgroundColor,
     DiffTexture3D<float, 4> data)
 {
-    // TODO: Student implementation starts here.
+    
+    float4 color = backgroundColor;
+    float start_t = volumeBound.hit(ray)[0];
+    float3 v_min = volumeBound.pMin;
+    float3 v_max = volumeBound.pMax;
+    static const uint MAX_STEPS_ = 1024;
+    float alpha = 0.0;
+    float totalDensity = 0.0;
+    
+    [ForceUnroll]
+    for (uint i = 0; i < MAX_STEPS_; i++) {
+        if (i < maxSteps) {
+            
+        
+        float t = start_t + (float(i) + 0.5) * stepSize;
+        float3 cur_point = ray.origin + t * ray.direction;
 
-    return float4(1.0, 0.0, 1.0, 1.0);
+        float3 uv = (cur_point - v_min) / (v_max - v_min);
+        uv = clamp(uv, float3(0.0), float3(1.0));
+        float4 sample = sampleTrilinear(data, uv);
+        sample = max(sample, float4(0.0));
 
-    // TODO: Student implementation ends here.
+        alpha = max(sample.a * stepSize * densityScale, 0.0);
+        color.rgb = color.rgb * (1.0 - alpha) + sample.rgb * alpha;
+        }
+        
+
+    }
+    color = clamp(color, float4(0.0), float4(1.0));
+    return color;
 }
+

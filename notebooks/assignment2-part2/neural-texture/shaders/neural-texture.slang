@@ -29,6 +29,8 @@ public struct Uniforms
     public uint2 canvasSize;
 }
 
+
+
 /**
  * Computes the positional encoding for a given uv coordinate.
  * @param uv The uv coordinate to compute the positional encoding for.
@@ -39,12 +41,9 @@ float[20] getPositionalEncoding(no_diff float2 uv)
     const uint NUM_LEVELS = 5;
     float[NUM_LEVELS * 4] pos_enc;
 
-    // TODO: Student implementation starts here.
-    for(int i = 0; i < 20; ++i)
-    {
-        pos_enc[i] = 0.0;
+    for (uint i = 0; i < NUM_LEVELS * 4; ++i) {
+        pos_enc[i] = sin(pow(2, i/4) * PI_F * uv[i % 2] + ((i/2) % 2) * PI_F / 2.0);
     }
-    // TODO: Student implementation starts here.
     return pos_enc;
 }
 

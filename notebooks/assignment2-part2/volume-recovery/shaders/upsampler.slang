@@ -6,11 +6,12 @@ public float4 sampling_fwd(
     StructuredBuffer<float4> sampleTex,
     uint2 texSize)
 {
-    // TODO: Student implementation starts here.
 
-    return float4(1.0, 0.0, 1.0, 1.0);
+    float2 uv = (float2(tid) + 0.5) / float2(canvasSize);
+    DiffTexture2D<float, 4> diffTex = DiffTexture2D<float, 4>(sampleTex, texSize);
 
-    // TODO: Student implementation ends here.
+    return sampleBilinear(diffTex,  uv);
+
 }
 
 public void sampling_bwd(
@@ -21,7 +22,9 @@ public void sampling_bwd(
     uint2 texSize,
     float4 dOut)
 {
-    // TODO: Student implementation starts here.
-
-    // TODO: Student implementation ends here.
+    float2 uv = (float2(tid) + 0.5) / float2(canvasSize);
+    DiffTexture2D_Differential<float, 4> sampleTexGrad_ = DiffTexture2D_Differential<float, 4>(sampleTexGrad);
+    DiffTexture2D<float, 4> diffTex = DiffTexture2D<float, 4>(sampleTex, texSize);
+    DifferentialPtrPair<DiffTexture2D<float, 4>> diffTex_d = DifferentialPtrPair<DiffTexture2D<float, 4>>(diffTex, sampleTexGrad_);
+    return bwd_diff(sampleBilinear)(diffTex_d, uv, dOut);
 }
